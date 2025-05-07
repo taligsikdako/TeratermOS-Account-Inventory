@@ -1,0 +1,79 @@
+setexitcode 1
+
+separator = ','
+strconcat srcCsv 'prod_login_src.csv'
+fileopen csvHandle 'prod_login_src.csv' 0
+
+flushrecv
+
+
+:loop_1
+
+	flushrecv
+	filereadln csvHandle line_csv	
+
+if result goto fclose
+
+strsplit line_csv separator
+	HOST = groupmatchstr1
+	LOGIN_USER = groupmatchstr2
+	LOGIN_PWD = groupmatchstr3
+	TARGETSERVER = groupmatchstr4
+	TARGETLOGIN = groupmatchstr5
+	TARGETLOGINPWD = groupmatchstr6
+	SSHCMD = groupmatchstr7
+	ROOTPWD = groupmatchstr8
+	SSHSPACE = ' '
+
+	sprintf2 LOGIN '%s /ssh /auth=password /user=%s /passwd=%s' HOST LOGIN_USER LOGIN_PWD
+
+		connect LOGIN
+	pause 6
+	sendln 'uname -n'
+	mpause 3500
+	sendln 'id'
+	strconcat SSHCMD TARGETLOGIN
+	strconcat SSHCMD SSHSPACE
+	strconcat SSHCMD TARGETSERVER
+	sendln SSHCMD
+	mpause 3500
+	sendln 'EG0000'
+	mpause 3500
+	sendln TARGETLOGIN
+	mpause 3500
+	sendln TARGETLOGINPWD
+	pause 6
+	sendln 'uname -n'
+	mpause 3500
+	SUCMD = 'su -'
+	sendln SUCMD
+	mpause 3500
+	sendln ROOTPWD
+	mpause 3500
+	sendln 'id'
+	mpause 2000
+	sendln 'uname -n'
+	mpause 2000	
+	sendln 'date'
+	mpause 2000
+	;;;egrep ^op /etc/shadow | egrep -v "operator|oprofile" | awk -F: '{print $1}' | sort
+	msg='egrep ^op /etc/shadow | egrep -v "operator|oprofile" |'
+	sprintf2 var "%s awk -F: '{print $1}'%s" '' '| sort'
+	strconcat msg var
+	sendln msg
+
+	mpause 2000
+	sendln 'exit'
+	mpause 2000
+	sendln 'exit'
+	mpause 2000
+	
+
+flushrecv
+goto loop_1
+
+:fclose
+	fileclose csvHandle
+	message = 'ENDED'
+	title = 'STATUS'
+	messagebox message title
